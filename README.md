@@ -145,6 +145,36 @@ DB_ENGINE=sqlite DEBUG=True python manage.py test
 
 ---
 
+## 🌍 Развертывание на сервере
+
+Подойдёт любой Linux-сервер (VPS) с 1–2 ГБ памяти и установленным [Docker](https://docs.docker.com/engine/install/).
+
+```bash
+git clone https://github.com/Aribama/Pedagogical_constructor_v2.git
+cd Pedagogical_constructor_v2
+
+# сайт на домене с автоматическим HTTPS (A-запись домена должна указывать на сервер)
+./deploy.sh lesson.example.ru
+
+# или без домена — сайт откроется по IP сервера
+./deploy.sh
+```
+
+Скрипт сам создаст `.env`, сгенерирует секретный ключ и пароли, соберёт и запустит контейнеры: PostgreSQL, Django (gunicorn), nginx со сборкой React и Caddy, который получает сертификат Let's Encrypt. В конце он напечатает адрес сайта и пароль демо-пользователей.
+
+| Действие | Команда |
+|---|---|
+| Обновить сайт после `git pull` | `./deploy.sh` |
+| Подключить DeepSeek | впишите `DEEPSEEK_API_KEY` в `.env`, затем `./deploy.sh` |
+| Логи | `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f backend` |
+| Резервная копия базы | `./deploy/backup.sh` (файлы в `backups/`) |
+| Создать администратора | `docker compose exec backend python manage.py createsuperuser` |
+| Остановить | `docker compose -f docker-compose.yml -f docker-compose.prod.yml down` |
+
+Данные базы хранятся в docker-томе и сохраняются при обновлениях. Чтобы не создавать демо-пользователей, поставьте `SEED_DEMO=0` в `.env`.
+
+---
+
 ## Установка и запуск
 
 ### 📋 Требования
