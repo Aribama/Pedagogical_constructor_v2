@@ -1,0 +1,5 @@
+# Скрипты запускаются в Linux-контейнерах: окончания строк всегда LF, даже на Windows
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.conf text eol=lf
+deploy/Caddyfile text eol=lf

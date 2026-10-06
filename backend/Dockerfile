@@ -7,7 +7,7 @@ COPY requirements.lock.txt .
 RUN pip install --no-cache-dir -r requirements.lock.txt
 
 COPY . .
-RUN chmod +x docker-entrypoint.sh
+RUN sed -i "s/\r$//" docker-entrypoint.sh && chmod +x docker-entrypoint.sh
 
 EXPOSE 8000
 ENTRYPOINT ["./docker-entrypoint.sh"]
