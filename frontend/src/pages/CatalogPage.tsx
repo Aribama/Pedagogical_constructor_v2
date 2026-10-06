@@ -135,25 +135,34 @@ export function CatalogPage() {
   ]);
 
   return (
-    <div className="container" style={{ paddingBottom: 120 }}>
-      <div className="row" style={{ alignItems: "flex-start" }}>
-        <div style={{ width: 320 }}>
+    <div className="container lc-page" style={{ maxWidth: 1400, paddingBottom: 160 }}>
+      <div className="lc-catalog">
+        <aside className="lc-catalog__filters">
           <FiltersPanel query={query} onChange={(patch) => setQuery((q) => ({ ...q, ...patch }))} />
-        </div>
+        </aside>
 
-        <div style={{ flex: 1 }} className="col">
-          <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ margin: 0 }}>Каталог карточек</h3>
-            <span className="small text-muted">
-              {loading ? "загрузка..." : `отобрано ${cards.length} из ${totalAll} шт.`}
+        <div className="lc-catalog__main">
+          <div className="lc-page-head">
+            <div>
+              <h1 className="lc-page-title">Каталог приёмов</h1>
+              <div className="lc-page-sub">
+                Нажмите на карточку, чтобы прочитать описание, или «+», чтобы добавить приём в сценарий
+              </div>
+            </div>
+            <span className="lc-pill">
+              {loading ? "загрузка..." : `отобрано ${cards.length} из ${totalAll}`}
             </span>
           </div>
 
-          <CardGrid
-            cards={cards}
-            onOpen={(c) => setSelected(c)}
-            onAdd={(c) => addRef.current?.(c.id, c.title)}
-          />
+          {!loading && cards.length === 0 ? (
+            <div className="lc-empty card">Под выбранные фильтры приёмов не нашлось. Попробуйте ослабить условия.</div>
+          ) : (
+            <CardGrid
+              cards={cards}
+              onOpen={(c) => setSelected(c)}
+              onAdd={(c) => addRef.current?.(c.id, c.title)}
+            />
+          )}
         </div>
       </div>
 

@@ -1,4 +1,58 @@
-/* globals.css — базовые стили приложения */
+/* globals.css — дизайн-система «КОнструктора ЗАнятий».
+   Палитра взята из карточек: розовый — активные приёмы, голубой — спокойные,
+   белый — вспомогательные; индиго — основной акцент интерфейса. */
+
+:root {
+  --lc-font: "Manrope Variable", "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+  --lc-ink: #0f172a;
+  --lc-ink-2: #334155;
+  --lc-muted: #64748b;
+  --lc-line: rgba(15, 23, 42, 0.08);
+  --lc-line-strong: rgba(15, 23, 42, 0.14);
+
+  --lc-bg: #f6f7fb;
+  --lc-surface: #ffffff;
+
+  --lc-primary: #4f46e5;
+  --lc-primary-600: #4338ca;
+  --lc-primary-50: #eef2ff;
+
+  --lc-active: #ec4899;
+  --lc-active-soft: #ffe4f1;
+  --lc-active-ink: #9d174d;
+  --lc-calm: #0ea5e9;
+  --lc-calm-soft: #e7f2ff;
+  --lc-calm-ink: #075985;
+
+  --lc-gradient: linear-gradient(120deg, #ec4899 0%, #8b5cf6 45%, #3b82f6 100%);
+  --lc-gradient-soft: linear-gradient(135deg, #ffe4f1 0%, #eef2ff 50%, #e7f2ff 100%);
+
+  --lc-radius-sm: 10px;
+  --lc-radius: 16px;
+  --lc-radius-lg: 24px;
+
+  --lc-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --lc-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --lc-shadow-lg: 0 2px 6px rgba(15, 23, 42, 0.05), 0 24px 48px rgba(15, 23, 42, 0.12);
+
+  /* Bootstrap под нашу палитру */
+  --bs-body-font-family: var(--lc-font);
+  --bs-body-color: var(--lc-ink);
+  --bs-body-bg: var(--lc-bg);
+  --bs-primary: var(--lc-primary);
+  --bs-primary-rgb: 79, 70, 229;
+  --bs-link-color: var(--lc-primary);
+  --bs-link-color-rgb: 79, 70, 229;
+  --bs-link-hover-color: var(--lc-primary-600);
+  --bs-link-hover-color-rgb: 67, 56, 202;
+  --bs-border-color: rgba(15, 23, 42, 0.1);
+  --bs-border-radius: 12px;
+  --bs-border-radius-sm: 8px;
+  --bs-border-radius-lg: 16px;
+  --bs-secondary-color: var(--lc-muted);
+  --bs-focus-ring-color: rgba(79, 70, 229, 0.25);
+}
 
 html, body {
   margin: 0;
@@ -7,17 +61,216 @@ html, body {
 }
 
 body {
-  background-color: #f6f8fb; /* нейтральный фон админки */
+  background-color: var(--lc-bg);
+  font-family: var(--lc-font);
+  color: var(--lc-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* КРИТИЧНО: не ограничиваем ширину root */
 #root {
   width: 100%;
   min-height: 100vh;
-
   margin: 0;
   padding: 0;
-
-  /* никакого центрирования всего приложения */
   text-align: left;
+}
+
+h1, h2, h3, h4, h5 {
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.text-muted { color: var(--lc-muted) !important; }
+.text-primary { color: var(--lc-primary) !important; }
+
+::selection { background: rgba(236, 72, 153, 0.18); }
+
+/* ===== Кнопки ===== */
+.btn {
+  border-radius: 12px;
+  font-weight: 600;
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn-sm { border-radius: 10px; }
+.btn-lg { border-radius: 14px; padding: 0.75rem 1.4rem; }
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  --bs-btn-bg: var(--lc-primary);
+  --bs-btn-border-color: var(--lc-primary);
+  --bs-btn-hover-bg: var(--lc-primary-600);
+  --bs-btn-hover-border-color: var(--lc-primary-600);
+  --bs-btn-active-bg: var(--lc-primary-600);
+  --bs-btn-active-border-color: var(--lc-primary-600);
+  --bs-btn-disabled-bg: #a5b4fc;
+  --bs-btn-disabled-border-color: #a5b4fc;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
+}
+.btn-primary:hover { box-shadow: 0 8px 22px rgba(79, 70, 229, 0.32); }
+
+.btn-outline-primary {
+  --bs-btn-color: var(--lc-primary);
+  --bs-btn-border-color: rgba(79, 70, 229, 0.35);
+  --bs-btn-hover-bg: var(--lc-primary);
+  --bs-btn-hover-border-color: var(--lc-primary);
+  --bs-btn-active-bg: var(--lc-primary-600);
+  --bs-btn-active-border-color: var(--lc-primary-600);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--lc-ink-2);
+  --bs-btn-border-color: var(--lc-line-strong);
+  --bs-btn-hover-color: var(--lc-ink);
+  --bs-btn-hover-bg: #f1f5f9;
+  --bs-btn-hover-border-color: var(--lc-line-strong);
+  --bs-btn-active-color: var(--lc-ink);
+  --bs-btn-active-bg: #e2e8f0;
+  --bs-btn-active-border-color: var(--lc-line-strong);
+  background: #fff;
+}
+
+.btn-gradient {
+  color: #fff;
+  border: 0;
+  background: var(--lc-gradient);
+  background-size: 160% 100%;
+  background-position: 0 0;
+  box-shadow: 0 10px 24px rgba(139, 92, 246, 0.3);
+}
+.btn-gradient:hover,
+.btn-gradient:focus {
+  color: #fff;
+  background-position: 100% 0;
+  box-shadow: 0 12px 28px rgba(139, 92, 246, 0.38);
+}
+
+/* ===== Карточки-панели и формы ===== */
+.card {
+  border-radius: var(--lc-radius);
+  border: 1px solid var(--lc-line);
+  box-shadow: var(--lc-shadow);
+}
+.card.shadow-sm { box-shadow: var(--lc-shadow) !important; }
+
+.form-control,
+.form-select {
+  border-radius: 12px;
+  border-color: var(--lc-line-strong);
+  padding: 0.6rem 0.85rem;
+  background-color: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-control-sm, .form-select-sm { border-radius: 10px; padding: 0.35rem 0.65rem; }
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(79, 70, 229, 0.6);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--lc-ink-2);
+  margin-bottom: 0.35rem;
+}
+
+.table { --bs-table-bg: transparent; }
+
+.modal-content {
+  border-radius: var(--lc-radius-lg);
+  border: 0;
+  box-shadow: var(--lc-shadow-lg);
+}
+
+/* ===== Шапка страницы ===== */
+.lc-page {
+  padding-top: 28px;
+  padding-bottom: 48px;
+}
+.lc-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.lc-page-title {
+  font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+  font-weight: 800;
+  margin: 0;
+}
+.lc-page-sub {
+  color: var(--lc-muted);
+  margin-top: 4px;
+}
+.lc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: #fff;
+  border: 1px solid var(--lc-line);
+  color: var(--lc-ink-2);
+  box-shadow: var(--lc-shadow-sm);
+}
+
+.lc-empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--lc-muted);
+}
+
+/* ===== Вкладки ===== */
+.lc-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #eef0f6;
+  border: 1px solid var(--lc-line);
+}
+.lc-tabs__btn {
+  border: 0;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--lc-muted);
+  transition: all 0.15s ease;
+}
+.lc-tabs__btn:hover { color: var(--lc-ink); }
+.lc-tabs__btn.is-active {
+  background: #fff;
+  color: var(--lc-primary);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(79, 70, 229, 0.08);
+}
+
+/* ===== Каталог ===== */
+.lc-catalog {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.lc-catalog__filters {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  border-radius: var(--lc-radius);
+  scrollbar-width: thin;
+}
+.lc-catalog__filters .lc-panel {
+  border-radius: var(--lc-radius) !important;
+  box-shadow: var(--lc-shadow);
+  padding: 16px !important;
+}
+@media (max-width: 900px) {
+  .lc-catalog { grid-template-columns: 1fr; }
+  .lc-catalog__filters { position: static; max-height: none; }
 }

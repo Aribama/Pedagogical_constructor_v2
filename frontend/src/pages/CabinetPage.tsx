@@ -98,25 +98,27 @@ export function CabinetPage() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: 1100 }}>
-      <div className="d-flex align-items-center justify-content-between mb-3">
+    <div className="container lc-page" style={{ maxWidth: 1100 }}>
+      <div className="lc-page-head">
         <div>
-          <h3 style={{ marginBottom: 4 }}>Личный кабинет</h3>
-          <div className="text-muted small">Управление сценариями и карточками</div>
+          <h1 className="lc-page-title">Личный кабинет</h1>
+          <div className="lc-page-sub">Управление сценариями и карточками</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="d-flex gap-2 mb-3">
+      <div className="lc-tabs mb-3">
         <button
-          className={`btn ${tab === "scenarios" ? "btn-primary" : "btn-outline-primary"}`}
+          type="button"
+          className={"lc-tabs__btn" + (tab === "scenarios" ? " is-active" : "")}
           onClick={() => setTab("scenarios")}
         >
           Мои сценарии
         </button>
 
         <button
-          className={`btn ${tab === "cards" ? "btn-primary" : "btn-outline-primary"}`}
+          type="button"
+          className={"lc-tabs__btn" + (tab === "cards" ? " is-active" : "")}
           onClick={() => setTab("cards")}
         >
           Мои карточки

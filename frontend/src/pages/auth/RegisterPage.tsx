@@ -34,31 +34,51 @@ export function RegisterPage() {
 
   return (
     <div>
-      <h3 style={{ marginTop: 0 }}>Регистрация</h3>
-      <form onSubmit={onSubmit} className="col">
+      <h1 className="lc-auth__title">Создать аккаунт</h1>
+      <div className="lc-auth__sub">Сохраняйте сценарии и добавляйте свои приёмы</div>
+      <form onSubmit={onSubmit} className="d-grid gap-3">
         <div>
-          <div className="small">Логин</div>
-          <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <label className="form-label" htmlFor="username">Логин</label>
+          <input
+            id="username"
+            className="form-control"
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
         </div>
         <div>
-          <div className="small">Email</div>
-          <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label className="form-label" htmlFor="email">Email</label>
+          <input
+            id="email"
+            className="form-control"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <div>
-          <div className="small">Пароль</div>
-          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label className="form-label" htmlFor="password">Пароль</label>
+          <input
+            id="password"
+            className="form-control"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
 
-        {err && <div className="small" style={{ color: "#c62828" }}>{err}</div>}
+        {err && <div className="lc-auth__error">{err}</div>}
 
-        <button className="btn primary" disabled={busy}>
+        <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>
           {busy ? "Создаём..." : "Создать аккаунт"}
         </button>
-
-        <div className="small">
-          Уже есть аккаунт? <Link to="/login">Войти</Link>
-        </div>
       </form>
+      <div className="lc-auth__foot">
+        Уже есть аккаунт? <Link to="/login">Войти</Link>
+      </div>
     </div>
   );
 }

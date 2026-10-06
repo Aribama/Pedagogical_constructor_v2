@@ -447,11 +447,11 @@ export default function ScenarioPage() {
   const updatedAt = (scenario as any).updated_at;
 
   return (
-    <div className="container" style={{ maxWidth: 1400, paddingBottom: 40 }}>
+    <div className="container lc-page" style={{ maxWidth: 1400 }}>
       {/* Header */}
       <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
-          <h2 className="mb-1 fw-bold">Сценарий занятия</h2>
+          <h1 className="lc-page-title mb-1">Сценарий занятия</h1>
           <div className="text-muted small lh-sm">
             <div>
               Создан: <b>{formatDateRu(createdAt)}</b>
