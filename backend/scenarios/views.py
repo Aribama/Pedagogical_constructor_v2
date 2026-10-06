@@ -218,7 +218,7 @@ class ScenarioViewSet(viewsets.ModelViewSet):
         Полностью заменяет items.
         """
         scenario = self.get_object()
-        ser = ScenarioItemsAutosaveSerializer(data=request.data)
+        ser = ScenarioItemsAutosaveSerializer(data=request.data, context={"request": request})
         ser.is_valid(raise_exception=True)
         items = ser.validated_data["items"]
 

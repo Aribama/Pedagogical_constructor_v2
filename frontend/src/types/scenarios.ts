@@ -18,6 +18,11 @@ export type ScenarioItemRead = {
   card_id?: number;
   order?: number;
   duration_minutes?: number | null;
+
+  // длительность приёма: своя для сценария или из карточки
+  duration_min?: number | null;
+  card_kind?: string | null;
+  stage_label?: string | null;
 };
 
 export type ScenarioRead = {

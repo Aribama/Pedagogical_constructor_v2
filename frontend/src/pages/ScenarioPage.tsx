@@ -10,7 +10,7 @@ import {
   updateScenario,
 } from "../api/scenarios";
 
-import { getCard, listCards } from "../api/cards";
+import { getCard } from "../api/cards";
 import { generatePlan } from "../api/ai";
 
 import type { TechniqueCard } from "../types/cards";
@@ -20,6 +20,7 @@ import type {
   ScenarioItemRead,
   ScenarioItemPatch,
   DayTime,
+  AiMode,
 } from "../types/scenarios";
 
 import { CardModal } from "../components/cards/CardModal";
@@ -80,8 +81,28 @@ function normalizeItems(items?: ScenarioItemRead[] | null): ItemUI[] {
 }
 
 function clampDayTime(v: any): DayTime {
-  if (v === "start" || v === "middle" || v === "end") return v;
+  if (v === "begin" || v === "middle" || v === "end") return v;
   return "middle";
+}
+
+const EMOTIONALITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "calm", label: "Спокойная и собранная" },
+  { value: "moderate", label: "Умеренно активная" },
+  { value: "very_active", label: "Очень активная и энергичная" },
+  { value: "tires_fast", label: "Быстро утомляемая" },
+  { value: "anxious", label: "Тревожная / неуверенная" },
+  { value: "disconnected", label: "Разобщённая / требует вовлечения" },
+];
+
+const CARD_KIND_BADGES: Record<string, { label: string; cls: string }> = {
+  aux_team_split: { label: "Группы", cls: "text-bg-warning" },
+  aux_warmup: { label: "Разминка", cls: "text-bg-info" },
+  aux_org: { label: "Оргмомент", cls: "text-bg-light" },
+  aux_reflection: { label: "Рефлексия", cls: "text-bg-secondary" },
+};
+
+function itemDuration(it: ScenarioItemRead): number {
+  return Number(it.custom_duration_min ?? it.duration_min ?? 0);
 }
 
 function durationLabel(min?: number) {
@@ -110,7 +131,8 @@ function SortableRow({
   };
 
   const cardTitle = item.card?.title ?? item.title ?? `Карточка #${item.technique_card}`;
-  const dur = item.duration_min ?? (item as any).duration ?? 0;
+  const dur = itemDuration(item);
+  const kindBadge = item.card_kind ? CARD_KIND_BADGES[item.card_kind] : undefined;
 
   return (
     <tr ref={setNodeRef} style={style}>
@@ -141,28 +163,14 @@ function SortableRow({
           >
             {cardTitle}
           </button>
-          {item.card?.group_split ? (
-            <span className="badge text-bg-warning" title="Деление на группы">
-              Группы
-            </span>
-          ) : null}
-          {item.card?.warm_up ? (
-            <span className="badge text-bg-info" title="Разогрев">
-              Разогрев
-            </span>
-          ) : null}
-          {item.card?.reflection ? (
-            <span className="badge text-bg-secondary" title="Рефлексия">
-              Рефлексия
-            </span>
-          ) : null}
+          {kindBadge ? <span className={`badge ${kindBadge.cls}`}>{kindBadge.label}</span> : null}
         </div>
       </td>
       <td style={{ width: 120 }}>
         <span className="text-muted">{durationLabel(dur)}</span>
       </td>
       <td style={{ width: 140 }}>
-        <span className="text-muted">{item.stage ?? "—"}</span>
+        <span className="text-muted">{item.stage_label || "—"}</span>
       </td>
       <td style={{ width: 120, textAlign: "right" }}>
         <button
@@ -192,19 +200,19 @@ export default function ScenarioPage() {
   const [draftTheme, setDraftTheme] = useState("");
 
   const [draftProfile, setDraftProfile] = useState<{
-    class_num: number;
+    grade: number | null;
     subject: string;
     goal: string;
-    group_activity: "low" | "moderate" | "high";
+    emotionality: string;
     day_time: DayTime;
     group_size: number;
     duration_min: number;
     teacher_notes: string;
   }>({
-    class_num: 5,
+    grade: 5,
     subject: "",
     goal: "",
-    group_activity: "moderate",
+    emotionality: "moderate",
     day_time: "middle",
     group_size: 0,
     duration_min: 45,
@@ -213,6 +221,7 @@ export default function ScenarioPage() {
 
   const [draftSubjectContent, setDraftSubjectContent] = useState("");
   const [draftPlan, setDraftPlan] = useState("");
+  const [draftAiMode, setDraftAiMode] = useState<AiMode>("balanced");
 
   const [draftItems, setDraftItems] = useState<ItemUI[]>([]);
   const [dirty, setDirty] = useState(false);
@@ -234,14 +243,14 @@ export default function ScenarioPage() {
         if (cancelled) return;
         setScenario(s);
 
-        setDraftTitle(normText(s.title ?? ""));
-        setDraftTheme(normText(s.theme ?? ""));
+        setDraftTitle(normText(s.name ?? s.title ?? ""));
+        setDraftTheme(normText(s.note ?? ""));
 
         setDraftProfile({
-          class_num: Number((s as any).class_num ?? 5),
+          grade: s.grade ?? null,
           subject: normText((s as any).subject ?? ""),
           goal: normText((s as any).goal ?? ""),
-          group_activity: ((s as any).group_activity ?? "moderate") as any,
+          emotionality: s.emotionality || "moderate",
           day_time: clampDayTime((s as any).day_time),
           group_size: Number((s as any).group_size ?? 0),
           duration_min: Number((s as any).duration_min ?? 45),
@@ -250,6 +259,7 @@ export default function ScenarioPage() {
 
         setDraftSubjectContent(normText((s as any).subject_content ?? ""));
         setDraftPlan(normText((s as any).plan_text ?? ""));
+        setDraftAiMode((s.ai_mode as AiMode) || "balanced");
 
         setDraftItems(normalizeItems((s as any).items));
         setDirty(false);
@@ -266,18 +276,19 @@ export default function ScenarioPage() {
   }, [scenarioId]);
 
   const totalMinutes = useMemo(() => {
-    return draftItems.reduce((acc, it) => acc + Number(it.duration_min ?? 0), 0);
+    return draftItems.reduce((acc, it) => acc + itemDuration(it), 0);
   }, [draftItems]);
 
   const toPatch = (): ScenarioPatch => {
     const patch: ScenarioPatch = {
-      title: draftTitle,
-      theme: draftTheme,
+      name: draftTitle,
+      // «Тема урока» хранится в поле note сценария
+      note: draftTheme,
 
-      class_num: draftProfile.class_num,
+      grade: draftProfile.grade,
       subject: draftProfile.subject,
       goal: draftProfile.goal,
-      group_activity: draftProfile.group_activity,
+      emotionality: draftProfile.emotionality,
       day_time: draftProfile.day_time,
       group_size: draftProfile.group_size,
       duration_min: draftProfile.duration_min,
@@ -285,6 +296,7 @@ export default function ScenarioPage() {
 
       subject_content: draftSubjectContent,
       plan_text: draftPlan,
+      ai_mode: draftAiMode,
     };
     return patch;
   };
@@ -297,26 +309,25 @@ export default function ScenarioPage() {
     return { ...baseScenario, ...updated } as any;
   }
 
+  async function saveAll(base: ScenarioRead) {
+    const merged = await persistDraft(base);
+    setScenario(merged);
+
+    const payloadItems: ScenarioItemPatch[] = draftItems.map((it, idx) => ({
+      technique_card: it.technique_card,
+      position: idx + 1,
+      custom_duration_min: it.custom_duration_min ?? null,
+    }));
+    await autosaveScenarioItems(base.id, payloadItems);
+    setDirty(false);
+  }
+
   async function onSave() {
     if (!scenario) return;
     setBusy(true);
     setError("");
     try {
-      const merged = await persistDraft(scenario);
-      setScenario(merged);
-
-      // items autosave
-      const payloadItems: ScenarioItemPatch[] = draftItems.map((it, idx) => ({
-        id: it.id,
-        scenario: scenario.id,
-        technique_card: it.technique_card,
-        position: idx + 1,
-        stage: (it as any).stage ?? null,
-        duration_min: (it as any).duration_min ?? 0,
-      }));
-      await autosaveScenarioItems(scenario.id, payloadItems);
-
-      setDirty(false);
+      await saveAll(scenario);
     } catch (e: any) {
       setError(e?.message ?? "Не удалось сохранить");
     } finally {
@@ -395,10 +406,11 @@ export default function ScenarioPage() {
     setBusy(true);
     setError("");
     try {
+      // Генерация идёт по сохранённым данным, поэтому сначала сохраняем черновик.
+      if (dirty) await saveAll(scenario);
       const res: any = await generatePlan({ scenario_id: scenario.id } as any);
       const planText = res?.data?.plan_text ?? res?.plan_text ?? "";
       setDraftPlan(normText(planText));
-      setDirty(true);
     } catch (e: any) {
       const detail =
         e?.response?.data?.detail ||
@@ -514,9 +526,11 @@ export default function ScenarioPage() {
                   <input
                     type="number"
                     className="form-control"
-                    value={draftProfile.class_num}
+                    min={1}
+                    max={11}
+                    value={draftProfile.grade ?? ""}
                     onChange={(e) => {
-                      setDraftProfile((p) => ({ ...p, class_num: Number(e.target.value || 0) }));
+                      setDraftProfile((p) => ({ ...p, grade: e.target.value ? Number(e.target.value) : null }));
                       setDirty(true);
                     }}
                   />
@@ -547,18 +561,20 @@ export default function ScenarioPage() {
                 </div>
 
                 <div className="col-12 col-md-6">
-                  <label className="form-label">Эмоц. активность</label>
+                  <label className="form-label">Состояние группы</label>
                   <select
                     className="form-select"
-                    value={draftProfile.group_activity}
+                    value={draftProfile.emotionality}
                     onChange={(e) => {
-                      setDraftProfile((p) => ({ ...p, group_activity: e.target.value as any }));
+                      setDraftProfile((p) => ({ ...p, emotionality: e.target.value }));
                       setDirty(true);
                     }}
                   >
-                    <option value="low">Низкая</option>
-                    <option value="moderate">Средняя</option>
-                    <option value="high">Высокая</option>
+                    {EMOTIONALITY_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -572,7 +588,7 @@ export default function ScenarioPage() {
                       setDirty(true);
                     }}
                   >
-                    <option value="start">Начало</option>
+                    <option value="begin">Начало</option>
                     <option value="middle">Середина</option>
                     <option value="end">Конец</option>
                   </select>
@@ -700,9 +716,25 @@ export default function ScenarioPage() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 className="card-title mb-0">План-конспект</h5>
-                <button className="btn btn-outline-success" onClick={onGeneratePlan} disabled={busy}>
-                  {busy ? "Генерация…" : "Сгенерировать план"}
-                </button>
+                <div className="d-flex gap-2 align-items-center">
+                  <select
+                    className="form-select form-select-sm"
+                    style={{ width: "auto" }}
+                    value={draftAiMode}
+                    title="Насколько свободно ИИ может менять выбранные приёмы"
+                    onChange={(e) => {
+                      setDraftAiMode(e.target.value as AiMode);
+                      setDirty(true);
+                    }}
+                  >
+                    <option value="strict">Строго по карточкам</option>
+                    <option value="balanced">Сбалансированно</option>
+                    <option value="free">Свободно</option>
+                  </select>
+                  <button className="btn btn-outline-success" onClick={onGeneratePlan} disabled={busy}>
+                    {busy ? "Генерация…" : "Сгенерировать план"}
+                  </button>
+                </div>
               </div>
 
               <div className="mt-3">

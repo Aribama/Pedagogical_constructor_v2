@@ -15,7 +15,9 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from cards.models import TechniqueCard
+from django.db.models import Q
+
+from cards.models import CardStatus, TechniqueCard
 from .models import Scenario, ScenarioItem
 
 
@@ -23,7 +25,10 @@ class ScenarioItemSerializer(serializers.ModelSerializer):
     technique_card = serializers.IntegerField(source="technique_card_id", read_only=True)
     card_id = serializers.IntegerField(source="technique_card_id", read_only=True)
     title = serializers.CharField(source="technique_card.title", read_only=True)
-    description = serializers.CharField(source="technique_card.description", read_only=True)
+    description = serializers.CharField(source="technique_card.description_html", read_only=True)
+    card_kind = serializers.CharField(source="technique_card.card_kind", read_only=True)
+    duration_min = serializers.SerializerMethodField()
+    stage_label = serializers.SerializerMethodField()
 
     order = serializers.IntegerField(source="position", read_only=True)
     duration_minutes = serializers.IntegerField(source="custom_duration_min", allow_null=True, read_only=True)
@@ -40,8 +45,27 @@ class ScenarioItemSerializer(serializers.ModelSerializer):
             "order",
             "custom_duration_min",
             "duration_minutes",
+            "duration_min",
+            "card_kind",
+            "stage_label",
             "created_at",
         ]
+
+    def get_duration_min(self, obj: ScenarioItem):
+        return obj.custom_duration_min or obj.technique_card.duration_min
+
+    def get_stage_label(self, obj: ScenarioItem):
+        card = obj.technique_card
+        names = [
+            title
+            for flag, title in (
+                (card.stage_start, "начало"),
+                (card.stage_core, "основная"),
+                (card.stage_final, "итог"),
+            )
+            if flag
+        ]
+        return ", ".join(names)
 
 
 class ScenarioReadSerializer(serializers.ModelSerializer):
@@ -150,7 +174,12 @@ class ScenarioItemUpsertSerializer(serializers.Serializer):
     custom_duration_min = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
     def validate_technique_card(self, value: int) -> int:
-        if not TechniqueCard.objects.filter(pk=value).exists():
+        qs = TechniqueCard.objects.filter(pk=value)
+        request = self.context.get("request")
+        if request is not None:
+            # В сценарий можно добавить только публичную карточку или свою
+            qs = qs.filter(Q(status=CardStatus.PUBLIC) | Q(owner=request.user))
+        if not qs.exists():
             raise serializers.ValidationError("TechniqueCard not found")
         return value
 

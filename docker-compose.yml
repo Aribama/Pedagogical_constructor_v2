@@ -1,0 +1,51 @@
+# Запуск всего конструктора одной командой:
+#   docker compose up --build
+# Затем откройте http://localhost:8080 (логин teacher / demo12345).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lessonapp_db
+      POSTGRES_USER: lessonapp_user
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-lessonapp}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lessonapp_user -d lessonapp_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-demo-only-change-me-0f3b7c1d9a}
+      DEBUG: "False"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      DB_ENGINE: postgres
+      DATABASE_NAME: lessonapp_db
+      DATABASE_USER: lessonapp_user
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-lessonapp}
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo12345}
+    volumes:
+      - static:/app/static
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${PORT:-8080}:80"
+    volumes:
+      - static:/srv/static:ro
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  static:

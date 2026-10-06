@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.sqlite3
+
+# Django
+backend/static/
+backend/media/
+backend/.env
+.env
+
+# Секреты и временные файлы
+cookies.txt
+*.tar.gz
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
