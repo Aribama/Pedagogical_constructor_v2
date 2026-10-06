@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { TechniqueCard } from "../../types/cards";
 import { getCard } from "../../api/cards";
+import DOMPurify from "dompurify";
 
 type Props = {
   card: TechniqueCard | null; // карточка из списка (короткая)
@@ -159,7 +160,7 @@ export function CardModal({ card, open, onClose, onAdd }: Props) {
   const k4Text = get4KText(viewCard);
   const stageText = getStageText(viewCard);
 
-  const descriptionHtml = ((viewCard as any).description_html ?? "") as string;
+  const descriptionHtml = DOMPurify.sanitize(((viewCard as any).description_html ?? "") as string);
 
   const styles: Record<string, React.CSSProperties> = {
     backdrop: {

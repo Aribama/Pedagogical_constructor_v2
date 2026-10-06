@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from .sanitize import sanitize_html
+
 
 class CardStatus(models.TextChoices):
     DRAFT = "draft", "Черновик (личная)"
@@ -89,5 +91,9 @@ class TechniqueCard(models.Model):
         default=CardKind.TECHNIQUE,
         db_index=True,
     )
+    def save(self, *args, **kwargs):
+        self.description_html = sanitize_html(self.description_html)
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return self.title
