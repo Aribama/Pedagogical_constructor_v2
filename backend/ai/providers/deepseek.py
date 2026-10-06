@@ -30,13 +30,18 @@ class DeepSeekProvider:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        try:
+            temperature = float(params.get("temperature", 0.4))
+        except (TypeError, ValueError):
+            temperature = 0.4
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": params.get("temperature", 0.2),
+            "temperature": min(max(temperature, 0.0), 1.5),
+            "max_tokens": 4000,
         }
 
-        r = requests.post(url, headers=headers, json=payload, timeout=90)
+        r = requests.post(url, headers=headers, json=payload, timeout=120)
         r.raise_for_status()
         data = r.json()
 

@@ -13,7 +13,7 @@ from scenarios.models import Scenario, ScenarioItem
 
 from .models import AIGenerationLog, AIServiceSettings
 from .prompts import build_lesson_input, build_multiagent_prompt
-from .providers.registry import get_provider, list_providers
+from .providers.registry import get_provider
 from .serializers import GeneratePlanSerializer
 
 
@@ -36,19 +36,8 @@ class GeneratePlanView(APIView):
         ser.is_valid(raise_exception=True)
 
         scenario_id = ser.validated_data["scenario_id"]
-        provider_name = (
-            ser.validated_data.get("provider")
-            or ser.validated_data.get("provider_name")
-            or request.data.get("provider")
-            or request.data.get("provider_name")
-            or "dummy"
-        )
-
-        params = (
-            ser.validated_data.get("params")
-            or request.data.get("params")
-            or {}
-        )
+        provider_name = ser.validated_data["provider"]
+        params = dict(ser.validated_data.get("params") or {})
 
         scenario = Scenario.objects.filter(id=scenario_id, owner=request.user).first()
         if not scenario:
@@ -83,19 +72,16 @@ class GeneratePlanView(APIView):
             scenario=scenario,
             items=items,
             cards_by_id=cards_by_id,
-            extra_params=params or {},
+            extra_params=params,
         )
-        system_prompt = build_multiagent_prompt()
+        system_prompt = build_multiagent_prompt(scenario.ai_mode)
 
         user_json = json.dumps(lesson_input, ensure_ascii=False, indent=2, default=str)
         prompt = system_prompt + "\n\nLESSON_INPUT_JSON:\n" + user_json
 
-        try:
-            provider = get_provider(provider_name)
-        except KeyError:
-            raise ValidationError(
-                {"provider": f"Unknown provider. Available: {list_providers()}"}
-            )
+        provider = get_provider(provider_name)
+        # Провайдер получает данные урока вместе с параметрами запроса.
+        provider_params = {**params, "lesson_input": lesson_input}
 
         requested_model = (params or {}).get("model", "") or ""
 
@@ -111,14 +97,16 @@ class GeneratePlanView(APIView):
         )
 
         try:
-            result = provider.generate_plan(prompt=prompt, params=params)
+            result = provider.generate_plan(prompt=system_prompt, params=provider_params)
         except Exception as e:
             try:
                 log.result = f"ERROR: {type(e).__name__}: {e}"
                 log.save(update_fields=["result"])
             except Exception:
                 pass
-            raise ValidationError({"detail": f"AI provider failed: {e}"})
+            raise ValidationError(
+                {"detail": "Не удалось получить ответ от нейросети. Попробуйте ещё раз позже."}
+            )
 
         result_text = getattr(result, "text", None) or ""
         result_model = getattr(result, "model", None) or requested_model
@@ -137,7 +125,11 @@ class GeneratePlanView(APIView):
             {
                 "scenario_id": str(scenario.id),
                 "plan_text": result_text,
-                "meta": {"provider": getattr(provider, "name", provider_name), "model": result_model},
+                "meta": {
+                    "provider": getattr(provider, "name", provider_name),
+                    "model": result_model,
+                    "requested_provider": provider_name,
+                },
             },
             status=status.HTTP_200_OK,
         )
