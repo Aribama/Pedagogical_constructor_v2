@@ -1,9 +1,13 @@
-# Запуск всего конструктора одной командой:
+# Локальный запуск всего конструктора одной командой:
 #   docker compose up --build
 # Затем откройте http://localhost:8080 (логин teacher / demo12345).
+#
+# Развертывание на сервере с HTTPS: см. раздел «Развертывание на сервере» в README
+# (./deploy.sh или docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build).
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: lessonapp_db
       POSTGRES_USER: lessonapp_user
@@ -18,11 +22,14 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     environment:
       SECRET_KEY: ${SECRET_KEY:-demo-only-change-me-0f3b7c1d9a}
       DEBUG: "False"
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      SECURE_COOKIES: ${SECURE_COOKIES:-False}
+      BEHIND_HTTPS_PROXY: ${BEHIND_HTTPS_PROXY:-False}
       DB_ENGINE: postgres
       DATABASE_NAME: lessonapp_db
       DATABASE_USER: lessonapp_user
@@ -30,21 +37,32 @@ services:
       DATABASE_HOST: db
       DATABASE_PORT: "5432"
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      SEED_DEMO: ${SEED_DEMO:-1}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo12345}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
     volumes:
       - static:/app/static
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/auth/csrf/', timeout=5)"]
+      interval: 10s
+      timeout: 6s
+      retries: 10
+      start_period: 20s
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "${PORT:-8080}:80"
     volumes:
       - static:/srv/static:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:

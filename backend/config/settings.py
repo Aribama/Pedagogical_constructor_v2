@@ -171,3 +171,7 @@ if not DEBUG:
     SESSION_COOKIE_HTTPONLY = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+# За обратным прокси с HTTPS (Caddy/nginx) Django узнаёт о схеме из заголовка.
+if env_bool("BEHIND_HTTPS_PROXY", False):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
