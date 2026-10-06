@@ -113,25 +113,58 @@
 
 ---
 
-## 🚀 Быстрый старт (одной командой)
+## 🚀 Запуск на своём компьютере (Docker)
 
-Нужен только Docker.
+Подходит для Windows, macOS и Linux. Ничего, кроме Docker, ставить не нужно: Python, Node.js и PostgreSQL работают внутри контейнеров.
 
-```bash
-docker compose up --build
-```
-
-Откройте http://localhost:8080 и войдите как `teacher` / `demo12345` (учитель) или `methodist` / `demo12345` (методист). В каталоге уже есть 16 карточек приёмов.
-
-План-конспект генерируется даже без ключа нейросети: встроенный офлайн-генератор собирает план по выбранным карточкам. Чтобы подключить DeepSeek, задайте ключ:
+**1. Установите Docker.** На Windows и macOS — [Docker Desktop](https://www.docker.com/products/docker-desktop/), на Linux — [Docker Engine](https://docs.docker.com/engine/install/). Запустите Docker Desktop и дождитесь, пока он покажет, что Docker работает. Проверка в терминале:
 
 ```bash
-DEEPSEEK_API_KEY=sk-... docker compose up --build
+docker compose version
 ```
 
-Для публичного сервера задайте свои `SECRET_KEY`, `DATABASE_PASSWORD`, `DEMO_PASSWORD`, а также `ALLOWED_HOSTS` и `CSRF_TRUSTED_ORIGINS` с адресом сайта.
+**2. Скачайте проект.** Через git:
 
-Локально без Docker и PostgreSQL:
+```bash
+git clone https://github.com/Aribama/Pedagogical_constructor_v2.git
+cd Pedagogical_constructor_v2
+```
+
+или скачайте ZIP на GitHub (Code → Download ZIP), распакуйте и откройте терминал в папке проекта (на Windows — PowerShell).
+
+**3. Запустите:**
+
+```bash
+docker compose up --build -d
+```
+
+Первый запуск занимает несколько минут: скачиваются образы и собирается проект. Следующие запуски проходят за секунды.
+
+**4. Откройте http://localhost:8080** и войдите:
+
+| Роль | Логин | Пароль |
+|---|---|---|
+| Учитель | `teacher` | `demo12345` |
+| Методист | `methodist` | `demo12345` |
+
+В каталоге уже есть 16 карточек приёмов. План-конспект генерируется даже без ключа нейросети: встроенный офлайн-генератор собирает план по выбранным карточкам.
+
+**Полезные команды** (выполнять в папке проекта):
+
+| Действие | Команда |
+|---|---|
+| Остановить | `docker compose down` |
+| Запустить снова | `docker compose up -d` |
+| Обновить после `git pull` | `docker compose up --build -d` |
+| Посмотреть логи | `docker compose logs -f backend` |
+| Создать администратора (/admin) | `docker compose exec backend python manage.py createsuperuser` |
+| Удалить всё вместе с базой | `docker compose down -v` |
+
+**Подключить DeepSeek.** Создайте в папке проекта файл `.env` со строкой `DEEPSEEK_API_KEY=sk-...` и выполните `docker compose up -d`.
+
+**Если порт 8080 занят**, добавьте в `.env` строку `PORT=8090` и откройте http://localhost:8090.
+
+**Запуск для разработки без Docker** (SQLite вместо PostgreSQL):
 
 ```bash
 cd backend
@@ -142,6 +175,8 @@ DB_ENGINE=sqlite DEBUG=True python manage.py runserver
 # тесты
 DB_ENGINE=sqlite DEBUG=True python manage.py test
 ```
+
+Фронтенд в режиме разработки: `cd frontend && npm install && npm run dev`, затем http://localhost:5173.
 
 ---
 
