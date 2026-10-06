@@ -1,0 +1,19 @@
+.wiki-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.wiki-card { padding: 22px; }
+.wiki-card__title { font-size: 1.15rem; margin: 0 0 14px; }
+.wiki-list { margin: 0; display: grid; gap: 10px; }
+.wiki-list__row {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--lc-line);
+}
+.wiki-list dt { font-weight: 800; font-size: 0.92rem; }
+.wiki-list dd { margin: 2px 0 0; color: var(--lc-muted); font-size: 0.88rem; }
+@media (max-width: 800px) {
+  .wiki-grid { grid-template-columns: 1fr; }
+}

@@ -7,11 +7,7 @@ export function AppLayout() {
 
   return (
     <div>
-      <Header
-        username={user ? `${user.username} (${user.role})` : undefined}
-        onLogout={logout}
-      />
-
+      <Header user={user} onLogout={logout} />
       <Outlet />
     </div>
   );

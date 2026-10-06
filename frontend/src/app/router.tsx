@@ -23,13 +23,18 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // Главная доступна без входа: это «витрина» сервиса
+  {
+    element: <AppLayout />,
+    children: [{ path: "/", element: <HomePage /> }],
+  },
+
   {
     element: <RequireAuth />,
     children: [
       {
         element: <AppLayout />,
         children: [
-          { path: "/", element: <HomePage /> },
           { path: "/catalog", element: <CatalogPage /> },
           { path: "/wiki", element: <WikiPage /> },
           { path: "/cabinet", element: <CabinetPage /> },

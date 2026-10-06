@@ -1,5 +1,6 @@
-import React from "react";
+import { Plus } from "lucide-react";
 import type { TechniqueCard } from "../../types/cards";
+import "./CardTile.css";
 
 type CardGridProps = {
   cards: TechniqueCard[];
@@ -41,51 +42,25 @@ function isAuxCard(c: TechniqueCard) {
   return c.card_kind !== "technique";
 }
 
-function getCardBg(c: TechniqueCard) {
-  // Вспомогательные — нейтральные
-  if (isAuxCard(c)) return "#ffffff";
-
-  // Основные — по активности
-  if (c.activity_type === "active") return "#ffe4f1"; // розовый
-  if (c.activity_type === "calm") return "#e7f2ff"; // голубой
-
-  // На всякий случай fallback
-  return "#ffffff";
+// Цвет карточки: вспомогательные — белые, основные — по активности
+function getCardVariant(c: TechniqueCard): "active" | "calm" | "aux" {
+  if (isAuxCard(c)) return "aux";
+  return c.activity_type === "active" ? "active" : "calm";
 }
 
 function getAuxLabel(c: TechniqueCard) {
   if (!isAuxCard(c)) return "";
-  // card_kind гарантированно один из aux_*
   return auxTypeRu[c.card_kind] || "Вспомогательная";
 }
 
-function StageBar({
-  start,
-  core,
-  fin,
-}: {
-  start: boolean;
-  core: boolean;
-  fin: boolean;
-}) {
-  const segStyle: React.CSSProperties = {
-    flex: 1,
-    height: 8,
-    borderRadius: 999,
-    border: "1px solid rgba(0,0,0,0.12)",
-    background: "#f3f5f7",
-  };
-
-  const filledStyle: React.CSSProperties = {
-    ...segStyle,
-    background: "rgba(0,0,0,0.18)",
-  };
-
+function StageBar({ start, core, fin }: { start: boolean; core: boolean; fin: boolean }) {
   return (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <div style={start ? filledStyle : segStyle} title="Начало" />
-      <div style={core ? filledStyle : segStyle} title="Середина" />
-      <div style={fin ? filledStyle : segStyle} title="Окончание" />
+    <div className="ct-stage" aria-label="Этап занятия">
+      <div className="ct-stage__bar">
+        <span className={start ? "is-on" : ""} title="Начало" />
+        <span className={core ? "is-on" : ""} title="Середина" />
+        <span className={fin ? "is-on" : ""} title="Окончание" />
+      </div>
     </div>
   );
 }
@@ -101,206 +76,122 @@ function Icons4KRow({
   collaboration: boolean;
   creative: boolean;
 }) {
-  const cell: React.CSSProperties = {
-    width: "25%",
-    textAlign: "center",
-    lineHeight: "20px",
-    height: 20,
-    fontSize: 16,
-    opacity: 0.85,
-  };
-
-  const empty = <span style={{ opacity: 0 }}>•</span>;
+  const items = [
+    { on: critical, icon: "❓", title: "Критическое мышление" },
+    { on: communication, icon: "💬", title: "Коммуникация" },
+    { on: collaboration, icon: "🤝", title: "Коллаборация" },
+    { on: creative, icon: "💡", title: "Креативность" },
+  ];
 
   return (
-    <div style={{ display: "flex", gap: 0 }}>
-      <div style={cell} title="Критическое мышление">
-        {critical ? "❓" : empty}
+    <div className="ct-4k">
+      {items.map((it) => (
+        <span key={it.title} className={"ct-4k__cell" + (it.on ? " is-on" : "")} title={it.title}>
+          {it.on ? it.icon : ""}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+type CardTileProps = {
+  card: TechniqueCard;
+  onOpen?: (card: TechniqueCard) => void;
+  onAdd?: (card: TechniqueCard) => void;
+  className?: string;
+};
+
+export function CardTile({ card: c, onOpen, onAdd, className }: CardTileProps) {
+  const variant = getCardVariant(c);
+  const auxLabel = getAuxLabel(c);
+  const workIcons = [c.work_individual ? "👤" : "", c.work_group ? "👥" : ""].filter(Boolean).join("");
+  const interactive = !!onOpen;
+
+  return (
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? () => onOpen(c) : undefined}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") onOpen(c);
+            }
+          : undefined
+      }
+      className={`ct ct--${variant}${interactive ? " ct--interactive" : ""}${className ? " " + className : ""}`}
+    >
+      {/* 1) Заголовок + бейдж для вспомогательных */}
+      <div className="ct__head">
+        <div className="ct__title" title={c.title}>
+          {c.title}
+        </div>
+        {!!auxLabel && (
+          <span className="ct__badge" title="Тип вспомогательной методики">
+            {auxLabel}
+          </span>
+        )}
       </div>
-      <div style={cell} title="Коммуникация">
-        {communication ? "💬" : empty}
+
+      {/* 2) 4K иконки */}
+      <Icons4KRow
+        critical={c.k_critical}
+        communication={c.k_communication}
+        collaboration={c.k_collaboration}
+        creative={c.k_creative}
+      />
+
+      {/* 3) Блум, длительность, формат, возраст */}
+      <div className="ct__meta">
+        <div className="ct__row">
+          <span title="Уровень по Блуму">📈</span>
+          <span>{getBloomText(c.bloom_level)}</span>
+        </div>
+        <div className="ct__row">
+          <span title="Длительность">⏱</span>
+          <span>
+            <b>{c.duration_min}</b> мин.
+            {workIcons ? (
+              <span className="ct__work" title="Формат работы">
+                {workIcons}
+              </span>
+            ) : null}
+          </span>
+        </div>
+        <div className="ct__row">
+          <span title="Возраст">📚</span>
+          <span>{getAgeText(c)}</span>
+        </div>
       </div>
-      <div style={cell} title="Коллаборация">
-        {collaboration ? "🤝" : empty}
-      </div>
-      <div style={cell} title="Креативность">
-        {creative ? "💡" : empty}
-      </div>
+
+      {onAdd ? (
+        <button
+          type="button"
+          className="ct__add"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onAdd(c);
+          }}
+          title="Добавить в сценарий"
+          aria-label="Добавить в сценарий"
+        >
+          <Plus size={16} strokeWidth={2.6} />
+        </button>
+      ) : null}
+
+      {/* 4) Этап занятия */}
+      <StageBar start={c.stage_start} core={c.stage_core} fin={c.stage_final} />
     </div>
   );
 }
 
 export function CardGrid({ cards, onOpen, onAdd }: CardGridProps) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-        gap: 12,
-      }}
-    >
-      {cards.map((c) => {
-        const bg = getCardBg(c);
-        const auxLabel = getAuxLabel(c);
-
-        const ageText = getAgeText(c);
-        const bloomText = getBloomText(c.bloom_level);
-
-        const workIcons = [c.work_individual ? "👤" : "", c.work_group ? "👥" : ""]
-          .filter(Boolean)
-          .join("");
-
-        return (
-          <div
-            key={c.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => onOpen(c)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") onOpen(c);
-            }}
-            style={{
-              cursor: "pointer",
-              background: bg,
-              border: "1px solid rgba(0,0,0,0.10)",
-              borderRadius: 16,
-              padding: 12,
-              boxShadow: "0 1px 0 rgba(0,0,0,0.03)",
-              userSelect: "none",
-            }}
-          >
-            {/* 1) Заголовок + бейдж для вспомогательных */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 8,
-                alignItems: "flex-start",
-                marginBottom: 6,
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: 14,
-                  lineHeight: "18px",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                }}
-                title={c.title}
-              >
-                {c.title}
-              </div>
-
-              {!!auxLabel && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    background: "rgba(0,0,0,0.06)",
-                    whiteSpace: "nowrap",
-                    alignSelf: "flex-start",
-                  }}
-                  title="Тип вспомогательной методики"
-                >
-                  {auxLabel}
-                </span>
-              )}
-            </div>
-
-            {/* 2) 4K иконки */}
-            <Icons4KRow
-              critical={c.k_critical}
-              communication={c.k_communication}
-              collaboration={c.k_collaboration}
-              creative={c.k_creative}
-            />
-
-            {/* 3) Блум */}
-            <div
-              style={{
-                marginTop: 6,
-                display: "flex",
-                gap: 6,
-                alignItems: "center",
-                fontSize: 12,
-                opacity: 0.9,
-              }}
-            >
-              <span title="Уровень по Блуму">📈</span>
-              <span>{bloomText}</span>
-            </div>
-
-            {/* 4) Длительность + формат */}
-            <div
-              style={{
-                marginTop: 6,
-                display: "flex",
-                gap: 8,
-                alignItems: "center",
-                fontSize: 12,
-                opacity: 0.9,
-              }}
-            >
-              <span title="Длительность">⏱</span>
-              <span>
-                {c.duration_min} мин.{" "}
-                {workIcons ? (
-                  <span style={{ marginLeft: 6 }} title="Формат работы">
-                    {workIcons}
-                  </span>
-                ) : null}
-              </span>
-
-              {/* кнопка добавить справа (если onAdd задан) */}
-              {onAdd ? (
-                <button
-                  className="btn"
-                  style={{
-                    marginLeft: "auto",
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    fontSize: 12,
-                    background: "rgba(255,255,255,0.65)",
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAdd(c);
-                  }}
-                  title="Добавить в сценарий"
-                >
-                  +
-                </button>
-              ) : null}
-            </div>
-
-            {/* 5) Возраст */}
-            <div
-              style={{
-                marginTop: 6,
-                display: "flex",
-                gap: 6,
-                alignItems: "center",
-                fontSize: 12,
-                opacity: 0.9,
-              }}
-            >
-              <span title="Возраст">📚</span>
-              <span>{ageText}</span>
-            </div>
-
-            {/* 6) Этап занятия */}
-            <div style={{ marginTop: 10 }}>
-              <StageBar start={c.stage_start} core={c.stage_core} fin={c.stage_final} />
-            </div>
-          </div>
-        );
-      })}
+    <div className="ct-grid">
+      {cards.map((c) => (
+        <CardTile key={c.id} card={c} onOpen={onOpen} onAdd={onAdd} />
+      ))}
     </div>
   );
 }

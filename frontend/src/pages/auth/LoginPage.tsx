@@ -28,27 +28,40 @@ export function LoginPage() {
 
   return (
     <div>
-      <h3 style={{ marginTop: 0 }}>Вход</h3>
-      <form onSubmit={onSubmit} className="col">
+      <h1 className="lc-auth__title">С возвращением 👋</h1>
+      <div className="lc-auth__sub">Войдите, чтобы продолжить работу над занятиями</div>
+      <form onSubmit={onSubmit} className="d-grid gap-3">
         <div>
-          <div className="small">Логин или email</div>
-          <input className="input" value={loginValue} onChange={(e) => setLoginValue(e.target.value)} />
+          <label className="form-label" htmlFor="login">Логин или email</label>
+          <input
+            id="login"
+            className="form-control"
+            autoComplete="username"
+            value={loginValue}
+            onChange={(e) => setLoginValue(e.target.value)}
+          />
         </div>
         <div>
-          <div className="small">Пароль</div>
-          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label className="form-label" htmlFor="password">Пароль</label>
+          <input
+            id="password"
+            className="form-control"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
 
-        {err && <div className="small" style={{ color: "#c62828" }}>{err}</div>}
+        {err && <div className="lc-auth__error">{err}</div>}
 
-        <button className="btn primary" disabled={busy}>
+        <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>
           {busy ? "Входим..." : "Войти"}
         </button>
-
-        <div className="small">
-          Нет аккаунта? <Link to="/register">Регистрация</Link>
-        </div>
       </form>
+      <div className="lc-auth__foot">
+        Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
+      </div>
     </div>
   );
 }
